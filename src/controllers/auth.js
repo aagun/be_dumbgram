@@ -3,6 +3,17 @@ const joi = require("joi");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+const checkUser = async (condition) => {
+  return user.findOne({
+    where: {
+      ...condition,
+    },
+    attributes: {
+      exclude: ["createdAt", "updatedAt"],
+    },
+  });
+};
+
 exports.register = async (req, res) => {
   // validation schema
   const schema = joi.object({
@@ -25,23 +36,8 @@ exports.register = async (req, res) => {
   }
 
   try {
-    const emailExist = await user.findOne({
-      where: {
-        email: req.body.email,
-      },
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-    });
-
-    const usernameExist = await user.findOne({
-      where: {
-        username: req.body.username,
-      },
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-    });
+    const emailExist = await checkUser({ email: req.body.email });
+    const usernameExist = await checkUser({ username: req.body.username });
 
     if (emailExist && usernameExist) {
       return res.status(400).send({
@@ -99,6 +95,71 @@ exports.register = async (req, res) => {
     res.status(500).send({
       status: "failed",
       message: "Server error",
+    });
+  }
+};
+
+exports.login = async (req, res) => {
+  // validation schema
+  const schema = joi.object({
+    email: joi.string().email().required(),
+    password: joi.string().required(),
+  });
+
+  // do validate and get the error
+  const { error } = schema.validate(req.body);
+
+  // if error exist send response
+  if (error) {
+    return res.status(400).send({
+      status: "failed",
+      error: {
+        message: error.details[0].message,
+      },
+    });
+  }
+
+  try {
+    const userExist = await checkUser({ email: req.body.email });
+    if (!userExist) {
+      return res.status(400).send({
+        status: "failed",
+        message: "Email and password do not match",
+      });
+    }
+
+    const isValid = await bcrypt.compare(req.body.password, userExist.password);
+    if (!isValid) {
+      return res.status(400).send({
+        status: "failed",
+        message: "Email and password do not match",
+      });
+    }
+
+    const dataToken = {
+      fullName: userExist.fullName,
+      username: userExist.username,
+      email: userExist.email,
+    };
+
+    const token = jwt.sign(dataToken, process.env.TOKEN_KEY);
+
+    res.status(200).send({
+      status: "success",
+      data: {
+        user: {
+          fullName: userExist.fullName,
+          username: userExist.username,
+          email: userExist.email,
+          token,
+        },
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({
+      status: "failed",
+      message: "Server erorr...",
     });
   }
 };
