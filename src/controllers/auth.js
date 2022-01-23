@@ -1,4 +1,4 @@
-const { user } = require("../../models");
+const { user, profile } = require("../../models");
 const joi = require("joi");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -67,12 +67,38 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
     // insert into database
-    const newUser = await user.create({
-      fullName: req.body.fullName,
-      username: req.body.username,
-      email: req.body.email,
-      password: hashedPassword,
-    });
+    // const newUser = await profile.create(
+    //   {
+    //     user: {
+    //       fullName: req.body.fullName,
+    //       username: req.body.username,
+    //       email: req.body.email,
+    //       password: hashedPassword,
+    //     },
+    //   },
+    //   {
+    //     include: {
+    //       model: user,
+    //       as: "user",
+    //     },
+    //   }
+    // );
+
+    const newUser = await user.create(
+      {
+        fullName: req.body.fullName,
+        username: req.body.username,
+        email: req.body.email,
+        password: hashedPassword,
+        profile: {},
+      },
+      {
+        include: {
+          model: profile,
+          as: "profile",
+        },
+      }
+    );
 
     const dataToken = {
       fullName: newUser.fullName,
@@ -85,8 +111,7 @@ exports.register = async (req, res) => {
     res.status(200).send({
       status: "success",
       data: {
-        fullName: newUser.fullName,
-        username: newUser.username,
+        ...dataToken,
         token,
       },
     });
@@ -148,9 +173,7 @@ exports.login = async (req, res) => {
       status: "success",
       data: {
         user: {
-          fullName: userExist.fullName,
-          username: userExist.username,
-          email: userExist.email,
+          ...dataToken,
           token,
         },
       },
