@@ -123,7 +123,7 @@ exports.deleteUser = async (req, res) => {
 exports.getFollowers = async (req, res) => {
   try {
     const { id } = req.params;
-    const dataUser = await followerFollowing.findAll({
+    const followers = await followerFollowing.findAll({
       where: {
         followingUserId: id,
       },
@@ -139,36 +139,23 @@ exports.getFollowers = async (req, res) => {
         },
       },
     });
-    // const dataUser = await user.findAll({
-    //   where: {
-    //     id: id,
-    //   },
-    //   attributes: ["id", "fullName", "username"],
-    //   include: [
-    //     // {
-    //     //   model: profile,
-    //     //   as: "profile",
-    //     // },
-    //     {
-    //       model: followerFollowing,
-    //       as: "followers",
-    //       include: {
-    //         model: user,
-    //         as: "user",
-    //       },
-    //       where: {
-    //         userId: id,
-    //       },
-    //     },
-    //   ],
-    // });
+
+    const dataFollowers = followers.map((data) => {
+      return {
+        id: data.id,
+        user: {
+          id: data.follower.id,
+          fullName: data.follower.fullName,
+          username: data.follower.username,
+          image: data.follower.profile.image,
+        },
+      };
+    });
 
     res.status(200).send({
       status: "success",
       data: {
-        user: {
-          followers: dataUser,
-        },
+        followers: dataFollowers,
       },
     });
   } catch (err) {
@@ -183,7 +170,7 @@ exports.getFollowers = async (req, res) => {
 exports.getFollowing = async (req, res) => {
   try {
     const { id } = req.params;
-    const dataUser = await followerFollowing.findAll({
+    const followings = await followerFollowing.findAll({
       where: {
         userId: id,
       },
@@ -200,12 +187,22 @@ exports.getFollowing = async (req, res) => {
       },
     });
 
+    const dataFollowings = followings.map((data) => {
+      return {
+        id: data.id,
+        user: {
+          id: data.following.id,
+          fullName: data.following.fullName,
+          username: data.following.username,
+          image: data.following.profile.image,
+        },
+      };
+    });
+
     res.status(200).send({
       status: "success",
       data: {
-        user: {
-          followings: dataUser,
-        },
+        followings: dataFollowings,
       },
     });
   } catch (err) {
