@@ -162,6 +162,7 @@ exports.login = async (req, res) => {
     }
 
     const dataToken = {
+      id: userExist.id,
       fullName: userExist.fullName,
       username: userExist.username,
       email: userExist.email,
@@ -173,7 +174,9 @@ exports.login = async (req, res) => {
       status: "success",
       data: {
         user: {
-          ...dataToken,
+          fullName: dataToken.fullName,
+          username: dataToken.username,
+          email: dataToken.email,
           token,
         },
       },
