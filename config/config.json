@@ -1,8 +1,8 @@
 {
   "development": {
     "username": "root",
-    "password": "taktahu12",
-    "database": "dumbgram",
+    "password": null,
+    "database": "databasename",
     "host": "localhost",
     "dialect": "mysql"
   },
